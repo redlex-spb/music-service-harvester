@@ -2,22 +2,26 @@ package controller
 
 import (
 	"encoding/json"
-	"github.com/redlex-spb/music-harvester/internal/usecase"
-	"github.com/redlex-spb/music-harvester/pkg"
 	"net/http"
+
+	"github.com/redlex-spb/music-harvester/internal/model"
 )
 
-func NewSongsHandler(uc *usecase.ParseSongs) http.HandlerFunc {
+type ParseSongs interface {
+	Execute(model.SongReq) error
+}
+
+func NewSongsHandler(uc ParseSongs) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req pkg.SongReq
+		var req model.SongReq
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		if err := uc.Execute(req); err != nil {
-			http.Error(w, err.Error(), 422)
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 			return
 		}
-		w.WriteHeader(202)
+		w.WriteHeader(http.StatusAccepted)
 	}
 }

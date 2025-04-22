@@ -1,23 +1,30 @@
 package controller
 
 import (
-	"github.com/redlex-spb/music-harvester/internal/usecase"
-	"github.com/redlex-spb/music-harvester/pkg"
 	"io"
 	"net/http"
+
+	"github.com/redlex-spb/music-harvester/internal/model"
 )
 
-func NewImageHandler(uc *usecase.ParseImage) http.HandlerFunc {
+type ParseImage interface {
+	Execute(model.ImageReq) error
+}
+
+func NewImageHandler(uc ParseImage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseMultipartForm(32 << 20)
-		file, hdr, _ := r.FormFile("file")
-		defer file.Close()
-		b, _ := io.ReadAll(file)
-		req := pkg.ImageReq{Filename: hdr.Filename, Bytes: b}
-		if err := uc.Execute(req); err != nil {
-			http.Error(w, err.Error(), 422)
+		file, hdr, err := r.FormFile("file")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		w.WriteHeader(202)
+		defer file.Close()
+		data, _ := io.ReadAll(file)
+		if err := uc.Execute(model.ImageReq{Filename: hdr.Filename, Bytes: data}); err != nil {
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			return
+		}
+		w.WriteHeader(http.StatusAccepted)
 	}
 }
