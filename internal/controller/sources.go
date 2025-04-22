@@ -5,13 +5,10 @@ import (
 	"net/http"
 
 	"github.com/redlex-spb/music-harvester/internal/model"
+	"github.com/redlex-spb/music-harvester/internal/usecase"
 )
 
-type ParseSources interface {
-	Execute(model.SourceReq) error
-}
-
-func NewSourcesHandler(uc ParseSources) http.HandlerFunc {
+func NewSourcesHandler(uc *usecase.ParseSources) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req model.SourceReq
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

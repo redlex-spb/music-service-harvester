@@ -9,6 +9,7 @@ import (
 
 type Producer interface {
 	Send(topic string, v any) error
+	Close() error
 }
 
 type kafkaProducer struct{ w *kafka.Writer }
@@ -22,7 +23,9 @@ func NewKafkaProducer(brokers []string) Producer {
 }
 
 func (k *kafkaProducer) Send(topic string, v any) error {
-	msg, _ := json.Marshal(v)
+	data, _ := json.Marshal(v)
 	return k.w.WriteMessages(context.Background(),
-		kafka.Message{Topic: topic, Value: msg})
+		kafka.Message{Topic: topic, Value: data})
 }
+
+func (k *kafkaProducer) Close() error { return k.w.Close() }

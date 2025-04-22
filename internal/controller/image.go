@@ -5,13 +5,10 @@ import (
 	"net/http"
 
 	"github.com/redlex-spb/music-harvester/internal/model"
+	"github.com/redlex-spb/music-harvester/internal/usecase"
 )
 
-type ParseImage interface {
-	Execute(model.ImageReq) error
-}
-
-func NewImageHandler(uc ParseImage) http.HandlerFunc {
+func NewImageHandler(uc *usecase.ParseImage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseMultipartForm(32 << 20)
 		file, hdr, err := r.FormFile("file")
