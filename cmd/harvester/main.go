@@ -1,20 +1,23 @@
 package main
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/redlex-spb/music-harvester/internal/controller"
 	"github.com/redlex-spb/music-harvester/internal/gateway"
 	"github.com/redlex-spb/music-harvester/internal/usecase"
-	"log"
-	"net/http"
 )
 
 func main() {
-	p := gateway.NewKafkaProducer([]string{"kafka:9092"})
-	r := chi.NewRouter()
-	r.Post("/v1/harvest/sources", controller.NewSourcesHandler(usecase.NewParseSources(p)))
-	r.Post("/v1/harvest/songs", controller.NewSongsHandler(usecase.NewParseSongs(p)))
-	r.Post("/v1/harvest/image", controller.NewImageHandler(usecase.NewParseImage(p)))
+	prod := gateway.NewKafkaProducer([]string{"kafka:9092"})
+	h := controller.Handlers{
+		Sources: controller.NewSourcesHandler(usecase.NewParseSources(prod)),
+		Songs:   controller.NewSongsHandler(usecase.NewParseSongs(prod)),
+		Image:   controller.NewImageHandler(usecase.NewParseImage(prod)),
+	}
+	r := controller.NewRouter(h)
 	log.Println("harvester :8080")
 	http.ListenAndServe(":8080", r)
 }

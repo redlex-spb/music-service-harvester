@@ -1,17 +1,25 @@
 package usecase
 
 import (
-	"fmt"
+	"github.com/google/uuid"
 	"github.com/redlex-spb/music-harvester/internal/gateway"
-	"github.com/redlex-spb/music-harvester/pkg"
+	"github.com/redlex-spb/music-harvester/internal/model"
+	"time"
 )
 
 type ParseImage struct{ prod gateway.Producer }
 
 func NewParseImage(p gateway.Producer) *ParseImage { return &ParseImage{p} }
-func (uc *ParseImage) Execute(r pkg.ImageReq) error {
-	if len(r.Bytes) == 0 {
-		return fmt.Errorf("empty")
+
+func (uc *ParseImage) Execute(req model.ImageReq) error {
+	// Assume image already stored to object store; object path stub
+	objPath := "images/" + uuid.NewString() + "-" + req.Filename
+	job := model.Job{
+		ID:        uuid.NewString(),
+		Kind:      model.JobImage,
+		Payload:   model.ImagePayload{Filename: req.Filename, ObjectPath: objPath},
+		CreatedAt: time.Now(),
+		UserID:    req.UserID,
 	}
-	return uc.prod.Send("puppeteer.parse", map[string]any{"type": "image", "file": r.Filename})
+	return uc.prod.Send("harvest.jobs", job)
 }
